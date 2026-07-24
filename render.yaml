@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: chronos-paper-trading
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerCommand: /app/scripts/start.sh
+    healthCheckPath: /
+    envVars:
+      - key: ALPACA_API_KEY
+        sync: false
+      - key: ALPACA_SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TRADING_SYMBOLS
+        value: AAPL,MSFT,SPY
+      - key: LOG_LEVEL
+        value: INFO
