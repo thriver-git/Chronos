@@ -9,6 +9,7 @@ from chronos.models.decisions import Action, AuditEntry
 from chronos.models.market_data import MarketSnapshot
 from chronos.risk.risk_manager import RiskManager
 from chronos.services.audit_log import AuditLog
+from chronos.services.runtime_status import write_runtime_status
 
 
 class TradingEngine:
@@ -30,15 +31,19 @@ class TradingEngine:
             if result.halt:
                 await self._broker.liquidate_all()
                 await self._audit.write(AuditEntry(symbol=market.symbol, event="kill_switch", message=result.reason))
+                write_runtime_status("halted", result.reason)
                 return
             if not result.allowed:
                 await self._audit.write(AuditEntry(symbol=market.symbol, event="rejected", message=result.reason))
+                write_runtime_status("decision_rejected", f"{market.symbol}: {result.reason}")
                 return
             side = OrderSide.BUY if decision.action == Action.BUY else OrderSide.SELL
             order_id = await self._broker.submit_limit_order(market.symbol, result.quantity, side, market.price)
             await self._audit.write(AuditEntry(symbol=market.symbol, event="order_submitted",
                                                message=f"{side.value} {result.quantity} limit @ {market.price}; id={order_id}",
                                                decision=decision))
+            write_runtime_status("order_submitted", f"{market.symbol}: {side.value} {result.quantity} shares submitted.")
         except Exception as error:
             self._logger.exception("Trigger cycle failed for %s", market.symbol)
             await self._audit.write(AuditEntry(symbol=market.symbol, event="error", message=str(error)[:500]))
+            write_runtime_status("error", f"{market.symbol}: {str(error)[:450]}")

@@ -20,9 +20,24 @@ def load_audit(path: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def load_runtime_status(path: Path) -> dict[str, str]:
+    """Load the latest engine status without breaking the dashboard."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"state": "starting", "detail": "The engine has not reported a status yet."}
+
+
 st.set_page_config(page_title="Chronos", layout="wide")
 st.title("Chronos — Paper Trading Audit")
 st.caption("Live order decisions and risk outcomes. Paper trading only.")
+status = load_runtime_status(Path("logs/runtime_status.json"))
+if status["state"] == "running":
+    st.success(f"Engine running — {status['detail']}")
+elif status["state"] == "error":
+    st.error(f"Engine error — {status['detail']}")
+else:
+    st.info(f"Engine {status['state'].replace('_', ' ')} — {status['detail']}")
 if st.button("Refresh"):
     st.rerun()
 audit = load_audit(Path("logs/audit.jsonl"))

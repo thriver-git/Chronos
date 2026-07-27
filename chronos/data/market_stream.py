@@ -12,6 +12,7 @@ from alpaca.data.models import Bar
 
 from chronos.data.indicators import calculate_macd, calculate_rsi
 from chronos.models.market_data import MarketSnapshot
+from chronos.services.runtime_status import write_runtime_status
 
 SnapshotHandler = Callable[[MarketSnapshot], Awaitable[None]]
 
@@ -32,14 +33,27 @@ class MarketStream:
         prices = self._closes[bar.symbol]
         prices.append(float(bar.close))
         if len(prices) < 35:
+            write_runtime_status(
+                "warming_up",
+                f"{bar.symbol}: collected {len(prices)}/35 bars before signal analysis starts.",
+            )
             return
         try:
             closes = pd.Series(prices, dtype="float64")
             rsi = calculate_rsi(closes)
             macd, signal = calculate_macd(closes)
             if rsi < 30 or rsi > 70:
+                write_runtime_status(
+                    "decision_pending",
+                    f"{bar.symbol}: RSI {rsi:.1f} triggered an LLM decision.",
+                )
                 await self._handler(MarketSnapshot(symbol=bar.symbol, price=float(bar.close), rsi=rsi,
                                                    macd=macd, macd_signal=signal))
+            else:
+                write_runtime_status(
+                    "waiting_for_signal",
+                    f"{bar.symbol}: RSI {rsi:.1f} is within the 30–70 trading range.",
+                )
         except (ValueError, ArithmeticError) as error:
             self._logger.warning("Indicator calculation skipped for %s: %s", bar.symbol, error)
 

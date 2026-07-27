@@ -4,8 +4,8 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    dockerCommand: /app/scripts/start.sh
     healthCheckPath: /
+    maxShutdownDelaySeconds: 30
     envVars:
       - key: ALPACA_API_KEY
         sync: false

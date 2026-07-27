@@ -13,13 +13,16 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    HOME=/app \
     PATH=/usr/local/bin:$PATH
 
 WORKDIR /app
 RUN addgroup --system chronos && adduser --system --ingroup chronos chronos
 COPY --from=builder /install /usr/local
 COPY --chown=chronos:chronos . .
-RUN chmod +x /app/scripts/start.sh
+RUN mkdir -p /app/.streamlit /app/logs && \
+    chmod +x /app/scripts/start.sh && \
+    chown -R chronos:chronos /app
 
 USER chronos
 EXPOSE 8501

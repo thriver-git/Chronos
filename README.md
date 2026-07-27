@@ -8,7 +8,7 @@ reach Alpaca. It is educational software, not investment advice.
 
 1. Create and activate a Python 3.10+ virtual environment.
 2. Run `pip install -r requirements.txt`.
-3. Copy `.env.example` to `.env` and supply paper-trading Alpaca and Groq keys.
+3. Copy `.env.example` to `.env` and supply paper-trading Alpaca and Groq API keys.
 4. Run `python -m chronos.main` in one terminal and `streamlit run dashboard/app.py` in another.
 
 The system deliberately uses Alpaca paper trading. No live endpoint is configured.

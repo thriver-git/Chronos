@@ -1,6 +1,6 @@
 #!/bin/sh
 # Start the stream-processing engine and keep the public Streamlit process in
-# the foreground. Render supplies PORT dynamically at runtime.
+# the foreground. The engine records its own status for the dashboard.
 set -eu
 
 python -m chronos.main &
