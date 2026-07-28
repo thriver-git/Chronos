@@ -1,10 +1,42 @@
 """Streamlit audit dashboard for the Chronos paper-trading agent."""
 from __future__ import annotations
 
+import asyncio
 import json
+import os
+import threading
 from pathlib import Path
+
 import pandas as pd
 import streamlit as st
+
+_ENGINE_LOCK = threading.Lock()
+_ENGINE_THREAD: threading.Thread | None = None
+
+
+def _embed_engine_enabled() -> bool:
+    return os.getenv("CHRONOS_EMBED_ENGINE", "").strip().lower() in {"1", "true", "yes"}
+
+
+def _start_embedded_engine() -> None:
+    """Run the trading engine in-process for low-memory single-container deploys."""
+    global _ENGINE_THREAD
+    if not _embed_engine_enabled():
+        return
+    with _ENGINE_LOCK:
+        if _ENGINE_THREAD is not None and _ENGINE_THREAD.is_alive():
+            return
+
+        def _run_engine() -> None:
+            from chronos.main import run
+
+            asyncio.run(run())
+
+        _ENGINE_THREAD = threading.Thread(target=_run_engine, daemon=True, name="chronos-engine")
+        _ENGINE_THREAD.start()
+
+
+_start_embedded_engine()
 
 
 def load_audit(path: Path) -> pd.DataFrame:

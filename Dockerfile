@@ -5,14 +5,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /build
-COPY requirements.txt .
+COPY requirements-docker.txt .
 RUN python -m pip install --upgrade pip && \
-    python -m pip install --prefix=/install -r requirements.txt
+    python -m pip install --prefix=/install -r requirements-docker.txt
 
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    MALLOC_ARENA_MAX=2 \
+    CHRONOS_EMBED_ENGINE=1 \
     HOME=/app \
     PATH=/usr/local/bin:$PATH
 
