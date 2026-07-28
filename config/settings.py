@@ -20,10 +20,13 @@ class Settings:
     def from_env(cls) -> "Settings":
         """Load required secrets and trading symbols without exposing their values."""
         load_dotenv()
-        values = {key: os.getenv(key, "").strip() for key in (
-            "ALPACA_API_KEY", "ALPACA_SECRET_KEY", "GROQ_API_KEY"
-        )}
-        missing = [key for key, value in values.items() if not value]
+        env_keys = (
+            ("ALPACA_API_KEY", "alpaca_api_key"),
+            ("ALPACA_SECRET_KEY", "alpaca_secret_key"),
+            ("GROQ_API_KEY", "groq_api_key"),
+        )
+        values = {field: os.getenv(env_key, "").strip() for env_key, field in env_keys}
+        missing = [env_key for env_key, field in env_keys if not values[field]]
         if missing:
             raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
         symbols = tuple(item.strip().upper() for item in os.getenv(
