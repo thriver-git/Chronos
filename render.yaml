@@ -5,7 +5,6 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: ALPACA_API_KEY
         sync: false
