@@ -26,6 +26,7 @@ class MarketStream:
         self._symbols = symbols
         self._handler = handler
         self._closes: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=60))
+        self._was_extreme: dict[str, bool] = defaultdict(bool)
         self._logger = logging.getLogger(__name__)
 
     async def _on_bar(self, bar: Bar) -> None:
@@ -42,7 +43,13 @@ class MarketStream:
             closes = pd.Series(prices, dtype="float64")
             rsi = calculate_rsi(closes)
             macd, signal = calculate_macd(closes)
-            if rsi < 30 or rsi > 70:
+            is_extreme = rsi < 30 or rsi > 70
+            # An extreme RSI may persist for many five-minute bars.  Run one
+            # decision on entry, then wait for RSI to normalize before a new
+            # trade opportunity is considered.
+            should_trigger = is_extreme and not self._was_extreme[bar.symbol]
+            self._was_extreme[bar.symbol] = is_extreme
+            if should_trigger:
                 write_runtime_status(
                     "decision_pending",
                     f"{bar.symbol}: RSI {rsi:.1f} triggered an LLM decision.",

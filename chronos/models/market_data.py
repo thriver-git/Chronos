@@ -21,3 +21,4 @@ class PortfolioState(BaseModel):
     equity: float = Field(gt=0)
     unrealized_pnl: float
     position_quantity: float = 0
+    has_open_order: bool = False

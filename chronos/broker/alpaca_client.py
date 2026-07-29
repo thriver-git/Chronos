@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import asyncio
 from alpaca.trading.client import TradingClient
-from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.enums import OrderSide, QueryOrderStatus, TimeInForce
 from alpaca.trading.requests import LimitOrderRequest
+from alpaca.trading.requests import GetOrdersRequest
 from chronos.models.market_data import PortfolioState
+
+
+MARKETABLE_LIMIT_BUFFER = 0.001
 
 
 class AlpacaPaperBroker:
@@ -23,18 +27,35 @@ class AlpacaPaperBroker:
             quantity = float(position.qty)
         except Exception:  # Alpaca uses an exception when no position exists.
             quantity = 0.0
+        try:
+            positions = await asyncio.to_thread(self._client.get_all_positions)
+            unrealized_pnl = sum(float(p.unrealized_pl or 0) for p in positions)
+        except Exception:
+            unrealized_pnl = 0.0
+        orders = await asyncio.to_thread(
+            self._client.get_orders,
+            filter=GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[symbol]),
+        )
         return PortfolioState(
             buying_power=float(account.buying_power), equity=float(account.equity),
-            unrealized_pnl=float(account.unrealized_pl), position_quantity=quantity,
+            unrealized_pnl=unrealized_pnl, position_quantity=quantity,
+            has_open_order=bool(orders),
         )
 
     async def submit_limit_order(
         self, symbol: str, quantity: int, side: OrderSide, limit_price: float
     ) -> str:
-        """Submit a day limit order and return its broker order identifier."""
+        """Submit a protected marketable day-limit order and return its identifier."""
+        # A limit exactly at a completed bar's close commonly remains unfilled
+        # by the time the order reaches Alpaca.  This small buffer lets a BUY
+        # cross the current ask (and a SELL cross the bid) while still bounding
+        # the worst accepted price.
+        protected_price = limit_price * (
+            1 + MARKETABLE_LIMIT_BUFFER if side == OrderSide.BUY else 1 - MARKETABLE_LIMIT_BUFFER
+        )
         request = LimitOrderRequest(
             symbol=symbol, qty=quantity, side=side, time_in_force=TimeInForce.DAY,
-            limit_price=round(limit_price, 2),
+            limit_price=round(protected_price, 2),
         )
         order = await asyncio.to_thread(self._client.submit_order, order_data=request)
         return str(order.id)
