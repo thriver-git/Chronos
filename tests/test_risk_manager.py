@@ -18,3 +18,24 @@ def test_drawdown_halts_execution() -> None:
     risk.validate(decision, PortfolioState(buying_power=100_000, equity=100_000, unrealized_pnl=0), 100)
     result = risk.validate(decision, PortfolioState(buying_power=90_000, equity=90_000, unrealized_pnl=-10_000), 100)
     assert result.halt and risk.paused
+
+
+def test_open_order_blocks_duplicate_execution() -> None:
+    """An unfilled order must prevent another order for the same symbol."""
+    result = RiskManager().validate(
+        TradeDecision(action=Action.BUY, confidence_score=90, reasoning="test"),
+        PortfolioState(buying_power=100_000, equity=100_000, unrealized_pnl=0, has_open_order=True),
+        100,
+    )
+    assert not result.allowed
+    assert result.reason == "an order for this symbol is still open"
+
+
+def test_buy_caps_total_position_at_five_percent() -> None:
+    """Existing shares consume the same five-percent exposure limit."""
+    result = RiskManager().validate(
+        TradeDecision(action=Action.BUY, confidence_score=90, reasoning="test"),
+        PortfolioState(buying_power=100_000, equity=100_000, unrealized_pnl=0, position_quantity=40),
+        100,
+    )
+    assert result.allowed and result.quantity == 10

@@ -14,6 +14,7 @@ class Settings:
     alpaca_secret_key: str
     groq_api_key: str
     symbols: tuple[str, ...]
+    database_url: str = ""
     log_level: str = "INFO"
 
     @classmethod
@@ -33,4 +34,9 @@ class Settings:
             "TRADING_SYMBOLS", "AAPL,MSFT,SPY").split(",") if item.strip())
         if not symbols:
             raise RuntimeError("TRADING_SYMBOLS must contain at least one symbol")
-        return cls(**values, symbols=symbols, log_level=os.getenv("LOG_LEVEL", "INFO"))
+        return cls(
+            **values,
+            symbols=symbols,
+            database_url=os.getenv("DATABASE_URL", "").strip(),
+            log_level=os.getenv("LOG_LEVEL", "INFO"),
+        )

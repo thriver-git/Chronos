@@ -35,11 +35,21 @@ class RiskManager:
             return RiskResult(False, reason="10% max-drawdown kill switch activated", halt=True)
         if self.paused:
             return RiskResult(False, reason="trading remains paused")
+        if state.has_open_order:
+            return RiskResult(False, reason="an order for this symbol is still open")
         if decision.action == Action.HOLD:
             return RiskResult(False, reason="model selected HOLD")
         if decision.action == Action.SELL:
             quantity = int(state.position_quantity)
             return RiskResult(quantity > 0, quantity, "no position to sell" if not quantity else "")
-        maximum_notional = min(state.equity * MAX_POSITION_FRACTION, state.buying_power)
-        quantity = int(maximum_notional // price)
-        return RiskResult(quantity > 0, quantity, "insufficient buying power for one share" if not quantity else "")
+        # Cap the *total* holding, rather than every new order independently.
+        # This prevents repeated BUY signals from compounding into an oversized
+        # position while a symbol remains oversold.
+        maximum_shares = int((state.equity * MAX_POSITION_FRACTION) // price)
+        quantity = max(0, maximum_shares - int(state.position_quantity))
+        quantity = min(quantity, int(state.buying_power // price))
+        if not quantity:
+            reason = ("position already at maximum allocation" if state.position_quantity >= maximum_shares
+                      else "insufficient buying power for one share")
+            return RiskResult(False, reason=reason)
+        return RiskResult(True, quantity)

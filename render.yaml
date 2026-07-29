@@ -12,6 +12,8 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      - key: DATABASE_URL
+        sync: false
       - key: TRADING_SYMBOLS
         value: AAPL,MSFT,SPY
       - key: LOG_LEVEL
