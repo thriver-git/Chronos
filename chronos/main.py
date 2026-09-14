@@ -37,8 +37,8 @@ async def run() -> None:
             )
             stream = MarketStream(settings.alpaca_api_key, settings.alpaca_secret_key, settings.symbols, engine.handle_trigger)
             write_runtime_status(
-                "running",
-                "Connected to the market stream. Waiting for enough bars and a signal trigger.",
+                "connecting",
+                "Connecting to the Alpaca market stream. Waiting for the first live bar.",
             )
             await stream.run()
         finally:
