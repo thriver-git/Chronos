@@ -22,11 +22,12 @@ _ENGINE_THREAD: threading.Thread | None = None
 
 
 def _embed_engine_enabled() -> bool:
-    return os.getenv("CHRONOS_EMBED_ENGINE", "").strip().lower() in {"1", "true", "yes"}
+    return os.getenv("CHRONOS_EMBED_ENGINE", "1").strip().lower() not in {"0", "false", "no"}
 
 
+@st.cache_resource(show_spinner=False)
 def _start_embedded_engine() -> None:
-    """Run the trading engine in-process for the low-memory demo deployment."""
+    """Run the trading engine once in-process for the dashboard deployment."""
     global _ENGINE_THREAD
     if not _embed_engine_enabled():
         return
