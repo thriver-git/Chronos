@@ -35,9 +35,16 @@ def _start_embedded_engine() -> None:
             return
 
         def _run_engine() -> None:
-            from chronos.main import run
+            from chronos.services.runtime_status import write_runtime_status
 
-            asyncio.run(run())
+            write_runtime_status("starting", "Embedded engine thread is starting.")
+            try:
+                from chronos.main import run
+
+                asyncio.run(run())
+            except Exception as error:
+                write_runtime_status("error", f"Embedded engine failed: {str(error)[:500]}")
+                raise
 
         _ENGINE_THREAD = threading.Thread(target=_run_engine, daemon=True, name="chronos-engine")
         _ENGINE_THREAD.start()
