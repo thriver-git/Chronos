@@ -188,14 +188,18 @@ with overview_tab:
         else:
             chart = px.bar(positions, x="Symbol", y="Unrealized P&L", color="Unrealized P&L", color_continuous_scale="RdYlGn")
             chart.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=20, b=0))
-            st.plotly_chart(chart, use_container_width=True)
+            st.plotly_chart(chart, width="stretch")
     with right:
         st.subheader("Recent decisions")
         decisions = events[events.get("Event", pd.Series(dtype=str)) == "decision"] if not events.empty else events
         if decisions.empty:
             st.info("No strategy decisions recorded yet.")
         else:
-            st.dataframe(decisions[["Timestamp", "Symbol", "Action", "Confidence"]].head(8), use_container_width=True, hide_index=True)
+            st.dataframe(
+                decisions[["Timestamp", "Symbol", "Action", "Confidence"]].head(8),
+                width="stretch",
+                hide_index=True,
+            )
 
 with portfolio_tab:
     st.subheader("Live Alpaca positions")
@@ -206,7 +210,7 @@ with portfolio_tab:
             positions.style.format({
                 "Average entry": "${:,.2f}", "Current price": "${:,.2f}", "Market value": "${:,.2f}",
                 "Unrealized P&L": "${:,.2f}", "Unrealized P&L %": "{:+.2f}%",
-            }), use_container_width=True, hide_index=True,
+            }), width="stretch", hide_index=True,
         )
 
 with orders_tab:
@@ -216,7 +220,7 @@ with orders_tab:
     else:
         st.dataframe(
             orders.style.format({"Limit price": "${:,.2f}", "Filled price": "${:,.2f}"}),
-            use_container_width=True, hide_index=True,
+            width="stretch", hide_index=True,
         )
 
 with strategy_tab:
@@ -228,7 +232,7 @@ with strategy_tab:
         symbols = ["All symbols", *sorted(events["Symbol"].dropna().unique().tolist())]
         selected_symbol = st.selectbox("Symbol", symbols)
         visible_events = events if selected_symbol == "All symbols" else events[events["Symbol"] == selected_symbol]
-        st.dataframe(visible_events, use_container_width=True, hide_index=True)
+        st.dataframe(visible_events, width="stretch", hide_index=True)
 
 with system_tab:
     st.subheader("System health")
