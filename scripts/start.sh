@@ -1,8 +1,10 @@
 #!/bin/sh
-# Single Streamlit process embeds the engine to stay within Render free-tier RAM.
+# Start the trading engine beside Streamlit, matching local development.
 set -eu
 
-export CHRONOS_EMBED_ENGINE=1
+export CHRONOS_EMBED_ENGINE=0
+
+python -m chronos.main &
 
 exec streamlit run dashboard/app.py \
     --server.address 0.0.0.0 \
