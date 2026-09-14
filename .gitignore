@@ -4,4 +4,6 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
-logs/*.log
+logs/
+config/.chronos.key
+config/runtime_profiles.enc

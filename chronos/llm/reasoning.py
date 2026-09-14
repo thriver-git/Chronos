@@ -32,7 +32,7 @@ class LlmReasoner:
                    "current_position": portfolio.position_quantity}
         response = await asyncio.to_thread(
             self._client.chat.completions.create,
-            model="llama-3.1-8b-instant", temperature=0, max_tokens=120,
+            model="groq/compound-mini", temperature=0, max_tokens=120,
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": SYSTEM_PROMPT},
                       {"role": "user", "content": json.dumps(payload)}],
